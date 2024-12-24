@@ -82,7 +82,7 @@ The project uses S3 backend for storing Terraform state with the following confi
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mujemi26/CloudDevOpsProject.git
 ```
 
 # Terraform Variables Configuration 🔧
