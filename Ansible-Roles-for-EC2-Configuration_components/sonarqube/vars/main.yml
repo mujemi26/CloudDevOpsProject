@@ -1,0 +1,10 @@
+---
+# vars file for sonarqube
+
+sonarqube_group: sonarqube
+sonarqube_user: sonarqube
+sonarqube_home: /opt/sonarqube
+sonarqube_db_user: sonar
+sonarqube_db_password: sonarqube123
+sonarqube_db_name: sonarqube
+postgres_password: postgres123

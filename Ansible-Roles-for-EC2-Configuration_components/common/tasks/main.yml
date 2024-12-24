@@ -1,0 +1,41 @@
+# tasks file for common
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install common packages
+  apt:
+    name:
+      - git
+      - curl
+      - wget
+      - unzip
+      - software-properties-common
+    state: present
+
+- name: Set up environment variables
+  lineinfile:
+    path: /etc/environment
+    line: "{{ item }}"
+    create: yes
+    state: present
+  loop:
+    - 'JAVA_HOME="/usr/lib/jvm/java-{{ java_version }}-openjdk-amd64"'
+    - 'JENKINS_HOME="/var/lib/jenkins"'
+    - 'PATH="/usr/local/bin:/usr/bin:/bin"'
+
+- name: Ensure Ansible temp directory exists with correct permissions
+  file:
+    path: /tmp/ansible
+    state: directory
+    mode: "0777"
+    owner: root
+    group: root
+  become: true
+
+- name: Set correct SELinux context for Ansible temp directory
+  command: chcon -Rt tmp_t /tmp/ansible
+  become: true
+  ignore_errors: true # In case SELinux is not enabled

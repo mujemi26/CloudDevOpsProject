@@ -1,0 +1,23 @@
+---
+all:
+  children:
+    dev:
+      hosts:
+        jenkins-dev:
+          ansible_host: 54.227.59.176
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: /Users/muhammadjimmy/Downloads/ivolve-final-project.pem
+        sonarqube-dev:
+          ansible_host: 54.221.92.185
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: /Users/muhammadjimmy/Downloads/ivolve-final-project.pem
+    prod:
+      hosts:
+        jenkins-prod:
+          ansible_host: 52.201.249.92
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: /Users/muhammadjimmy/Downloads/ivolve-final-project.pem
+        sonarqube-prod:
+          ansible_host: 54.80.213.253
+          ansible_user: ubuntu
+          ansible_ssh_private_key_file: /Users/muhammadjimmy/Downloads/ivolve-final-project.pem

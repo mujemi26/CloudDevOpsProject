@@ -1,0 +1,14 @@
+---
+# defaults file for sonarqube
+
+sonarqube_version: "9.9.0.65466"
+sonarqube_user: sonar
+sonarqube_group: sonar
+sonarqube_home: /opt/sonarqube
+sonarqube_data_dir: "{{ sonarqube_home }}/data"
+sonarqube_temp_dir: "{{ sonarqube_home }}/temp"
+sonarqube_db_name: sonar
+sonarqube_db_user: sonar
+sonarqube_db_password: sonar123
+sonarqube_web_port: 9000
+sonarqube_java_opts: "-Xms512m -Xmx1024m"

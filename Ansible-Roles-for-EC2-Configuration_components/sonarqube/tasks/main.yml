@@ -1,0 +1,276 @@
+---
+- name: Create SonarQube group
+  group:
+    name: "{{ sonarqube_group }}"
+    state: present
+
+- name: Create SonarQube user
+  user:
+    name: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    home: "{{ sonarqube_home }}"
+    shell: /bin/bash
+    system: yes
+
+- name: Install required packages
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2 # Required for Ansible PostgreSQL modules
+      - acl # Required for become_user to work properly
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Find PostgreSQL version directory
+  shell: "ls -d /etc/postgresql/*/ | head -n 1"
+  register: pg_version_dir
+  changed_when: false
+  become: true
+
+- name: Debug PostgreSQL directory
+  debug:
+    var: pg_version_dir.stdout
+
+- name: Update pg_hba.conf for password authentication
+  postgresql_pg_hba:
+    dest: "{{ pg_version_dir.stdout }}main/pg_hba.conf"
+    contype: host
+    databases: all
+    method: md5
+    users: all
+    source: localhost
+    create: true
+  become: true
+  notify: Restart PostgreSQL
+
+- name: Update pg_hba.conf for local connections
+  postgresql_pg_hba:
+    dest: "{{ pg_version_dir.stdout }}main/pg_hba.conf"
+    contype: local
+    databases: all
+    method: md5
+    users: all
+    create: true
+  become: true
+  notify: Restart PostgreSQL
+
+- name: Create handler for PostgreSQL restart
+  meta: flush_handlers
+
+- name: Ensure PostgreSQL is started and enabled
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  become: true
+
+- name: Wait for PostgreSQL to be ready
+  wait_for:
+    port: 5432
+    timeout: 30
+
+- name: Set postgres user password
+  postgresql_user:
+    name: postgres
+    password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+  when: postgres_password is defined
+
+- name: Check if PostgreSQL user exists
+  postgresql_query:
+    db: postgres
+    query: "SELECT 1 FROM pg_roles WHERE rolname='{{ sonarqube_db_user }}'"
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+  register: user_check
+  ignore_errors: true
+
+- name: Terminate existing database connections for sonarqube user
+  postgresql_query:
+    db: postgres
+    query: "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = '{{ sonarqube_db_user }}'"
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+  when: user_check.rowcount > 0
+  ignore_errors: true
+
+- name: Revoke all privileges from PostgreSQL user
+  postgresql_query:
+    db: postgres
+    query: "REASSIGN OWNED BY {{ sonarqube_db_user }} TO postgres; DROP OWNED BY {{ sonarqube_db_user }}"
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+  when: user_check.rowcount > 0
+  ignore_errors: true
+
+- name: Drop PostgreSQL user if exists
+  postgresql_user:
+    name: "{{ sonarqube_db_user }}"
+    state: absent
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+  when: user_check.rowcount > 0
+
+- name: Drop PostgreSQL database if exists
+  postgresql_db:
+    name: "{{ sonarqube_db_name }}"
+    state: absent
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+
+- name: Create PostgreSQL user
+  postgresql_user:
+    name: "{{ sonarqube_db_user }}"
+    password: "{{ sonarqube_db_password }}"
+    role_attr_flags: CREATEDB,SUPERUSER
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+
+- name: Create PostgreSQL database
+  postgresql_db:
+    name: "{{ sonarqube_db_name }}"
+    owner: "{{ sonarqube_db_user }}"
+    encoding: UTF8
+    template: template0
+    login_user: postgres
+    login_host: localhost
+    login_password: "{{ postgres_password }}"
+  become: true
+  become_user: postgres
+  become_method: sudo
+
+- name: Download SonarQube
+  get_url:
+    url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
+    dest: /tmp/sonarqube.zip
+    mode: "0644"
+  register: download_result
+  until: download_result is success
+  retries: 3
+  delay: 5
+
+- name: Create SonarQube directory
+  file:
+    path: "{{ sonarqube_home }}"
+    state: directory
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    mode: "0755"
+
+- name: Check if SonarQube is already extracted
+  stat:
+    path: "{{ sonarqube_home }}/conf"
+  register: sonarqube_conf
+
+- name: Create temporary directory
+  file:
+    path: /tmp/sonarqube_temp
+    state: directory
+    mode: "0755"
+  when: not sonarqube_conf.stat.exists
+
+- name: Extract SonarQube to temp directory
+  unarchive:
+    src: /tmp/sonarqube.zip
+    dest: /tmp/sonarqube_temp
+    remote_src: yes
+  when: not sonarqube_conf.stat.exists
+
+- name: Find extracted directory name
+  find:
+    paths: /tmp/sonarqube_temp
+    file_type: directory
+    recurse: no
+  register: found_directory
+  when: not sonarqube_conf.stat.exists
+
+- name: Copy SonarQube files to final location
+  shell: "cp -R {{ found_directory.files[0].path }}/* {{ sonarqube_home }}/"
+  when: not sonarqube_conf.stat.exists and found_directory.files | length > 0
+
+- name: Set ownership of SonarQube directory
+  file:
+    path: "{{ sonarqube_home }}"
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    recurse: yes
+    mode: "0755"
+
+- name: Configure SonarQube properties
+  template:
+    src: sonar.properties.j2
+    dest: "{{ sonarqube_home }}/conf/sonar.properties"
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    mode: "0640"
+
+- name: Configure SonarQube wrapper
+  template:
+    src: wrapper.conf.j2
+    dest: "{{ sonarqube_home }}/conf/wrapper.conf"
+    owner: "{{ sonarqube_user }}"
+    group: "{{ sonarqube_group }}"
+    mode: "0640"
+
+- name: Create SonarQube service
+  template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+    mode: "0644"
+  notify: Restart SonarQube
+
+- name: Ensure elastic search limits are set
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  with_items:
+    - { key: "vm.max_map_count", value: "262144" }
+    - { key: "fs.file-max", value: "65536" }
+
+- name: Configure system limits for SonarQube
+  pam_limits:
+    domain: "{{ sonarqube_user }}"
+    limit_type: "{{ item.limit_type }}"
+    limit_item: "{{ item.limit_item }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { limit_type: "-", limit_item: "nofile", value: "65536" }
+    - { limit_type: "-", limit_item: "nproc", value: "4096" }
+
+- name: Start and enable SonarQube service
+  systemd:
+    name: sonarqube
+    state: started
+    enabled: yes
+    daemon_reload: yes
