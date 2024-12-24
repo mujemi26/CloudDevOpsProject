@@ -1,0 +1,4 @@
+SonarQube Dev Public IP: 54.221.92.185
+SonarQube Prod Public IP: 54.80.213.253
+Jenkins Dev Public IP: 54.227.59.176
+Jenkins Prod Public IP: 52.201.249.92
