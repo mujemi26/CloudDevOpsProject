@@ -33,7 +33,69 @@ This project showcases a full-fledged DevOps pipeline that automates the process
 
 ![Architecture Diagram](path_to_architecture_diagram.png)
 
+```mermaid
+flowchart TD
+    classDef awsColor fill:#FF9900,stroke:#232F3E,stroke-width:2px;
+    classDef toolColor fill:#36A2EB,stroke:#232F3E,stroke-width:2px;
+    classDef processColor fill:#4BC0C0,stroke:#232F3E,stroke-width:2px;
+    classDef sourceColor fill:#FF6384,stroke:#232F3E,stroke-width:2px;
 
+    DEV[Developer] -->|Git Push| GIT[GitHub Repository]
+    class DEV sourceColor
+    class GIT sourceColor
+
+    subgraph "CI/CD Pipeline"
+        JM[Jenkins Master]
+        JA[Jenkins Agent]
+        SQ[SonarQube]
+        DR[Docker Registry]
+    end
+    class JM,JA,SQ,DR toolColor
+
+    subgraph "Infrastructure as Code"
+        TF[Terraform]
+        AB[Ansible]
+    end
+    class TF,AB toolColor
+
+    subgraph "AWS Cloud Infrastructure"
+        VPC[VPC]
+        EC2[EC2 Instances]
+        SG[Security Groups]
+        IAM[IAM Roles]
+    end
+    class VPC,EC2,SG,IAM awsColor
+
+    GIT -->|Webhook| JM
+    JM -->|Trigger Build| JA
+    JA -->|Code Analysis| SQ
+    SQ -->|Quality Gate| JA
+    JA -->|Build Image| DR
+
+    TF -->|Provision| VPC
+    TF -->|Provision| EC2
+    TF -->|Configure| SG
+    TF -->|Setup| IAM
+
+    AB -->|Configure| EC2
+    AB -->|Install| JA
+    AB -->|Install| SQ
+
+    JA -->|Deploy| EC2
+
+    subgraph "Pipeline Stages"
+        direction TB
+        S1[Code Checkout]
+        S2[Code Analysis]
+        S3[Build]
+        S4[Test]
+        S5[Docker Build]
+        S6[Deploy]
+
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    end
+    class S1,S2,S3,S4,S5,S6 processColor
+```
 
 ## Prerequisites
 
