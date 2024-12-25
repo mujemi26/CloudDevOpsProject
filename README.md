@@ -31,7 +31,7 @@ This project showcases a full-fledged DevOps pipeline that automates the process
 
 ## Architecture Diagram
 
-![Architecture Diagram](path_to_architecture_diagram.png)
+- [Architecture Diagram](Architecture Diagram)
 
 ```mermaid
 flowchart TD
