@@ -110,7 +110,7 @@ docker-compose up --build -d
 ```
 
 Note: Ensure that the Docker daemon is running on your machine.
-- [Full Docker Guide](./Dockerfile & Components/README.md)
+- [Full Docker Guide](./Dockerfile%20%26%20Components/README.md)
 ### 5. Continuous Integration with Jenkins
 
 Set up Jenkins for CI/CD:
@@ -118,7 +118,7 @@ Set up Jenkins for CI/CD:
 - Install necessary plugins: Docker, Ansible, Terraform, and SonarQube.
 - Configure Jenkins to connect with your version control system.
 - Create a Jenkins pipeline using the provided Jenkinsfile in the Jenkins Components directory.
-
+- [Full Jenkins Guide Here](./Jenkins%20Components/README.md)
 ### 6. Code Quality Analysis with SonarQube
 
 Set up SonarQube for code analysis:
