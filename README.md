@@ -88,7 +88,7 @@ terraform apply
 ```
 
 Note: Ensure that your AWS credentials are configured correctly and have the necessary permissions.
-[Full Terraform Guide](./Terraform-aws-infrastructure_components/README.md)
+- [Full Terraform Guide Here](./Terraform-aws-infrastructure_components/README.md)
 ### 3. Configuration Management with Ansible
 
 After provisioning the infrastructure, use Ansible to configure the EC2 instances:
