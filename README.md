@@ -7,6 +7,7 @@ Welcome to the **CloudDevOpsProject**! This project demonstrates a comprehensive
 - **Ansible** 🔧: Configuration management and automation of server setups.
 - **SonarQube** 🔍: Continuous inspection of code quality to detect bugs and vulnerabilities.
 - **Jenkins** 🎡: Continuous Integration and Continuous Deployment (CI/CD) automation.
+- **Kubernetes** ☸️ : Container Orchestration with Kubernetes for deployment.
 
 ## Table of Contents
 
