@@ -99,7 +99,7 @@ ansible-playbook -i inventory main.yml
 ```
 
 Note: Update the inventory file with the public IP addresses of your EC2 instances.
-
+- [Full Ansible Guide Here](./Ansible-Roles-for-EC2-Configuration_components/README.md)
 ### 4. Application Deployment with Docker
 
 Build and run the Docker containers:
@@ -110,7 +110,7 @@ docker-compose up --build -d
 ```
 
 Note: Ensure that the Docker daemon is running on your machine.
-
+- [Full Docker Guide](./Dockerfile & Components/README.md)
 ### 5. Continuous Integration with Jenkins
 
 Set up Jenkins for CI/CD:
