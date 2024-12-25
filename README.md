@@ -31,7 +31,7 @@ This project showcases a full-fledged DevOps pipeline that automates the process
 
 ## Architecture Diagram
 
-![](screenshots/Design.png)
+![](./screenshots/Design.png)
 
 
 
